@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.0)
 project(sylar)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -g -Wall -Wno-deprecated -Werror -Wno-unused-function")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -g -Wall -Wno-deprecated -Werror -Wno-unused-function")
 
-set (LIB_SRC src/log.cpp)
+set (LIB_SRC 
+    src/log.cpp
+    src/util.cpp
+    )
 
 add_library(sylar SHARED ${LIB_SRC})
 #add_library(sylar_static STATIC ${LIB_SRC})

@@ -1,15 +1,28 @@
+//===----------------------------------------------------------------------===//
+//
+//                         Sylar-Server
+//
+// log.cpp
+//
+// Identification: src/log.cpp
+//
+// Copyright (c) 2022, pyc
+//
+//===----------------------------------------------------------------------===//
+
 #include "log.h"
 
 #include <functional>
 #include <iostream>
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace sylar {
 
-const char* ToString(LogLevel::Level level) {
+const char* LogLevel::ToString(LogLevel::Level level) {
     switch (level) {
         case LogLevel::DEBUG:
             return "DEBUG";
@@ -76,9 +89,19 @@ public:
 };
 class TimeFormatItem : public LogFormatter::FormatItem {
 public:
-    TimeFormatItem(const std::string& format = "%Y-%m-%d %H:%M:%S") : m_format(format) {}
+    TimeFormatItem(const std::string& format)
+        : m_format(format) {
+        if (m_format.empty()) {
+            m_format = "%Y-%m-%d %H:%M:%S";
+        }
+    }
     void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) override {
-        os << event->getTime();
+        struct tm tm;
+        time_t time = event->getTime();
+        localtime_r(&time, &tm);
+        char buf[64];
+        strftime(buf, sizeof(buf), m_format.c_str(), &tm);
+        os << buf;
     }
 
 private:
@@ -123,7 +146,33 @@ public:
     }
 };
 
-Logger::Logger(const std::string& name = "root") : m_name(name) {}
+LogEvent::LogEvent(const char* file, int32_t line, uint32_t elapse,
+                   uint32_t thread_id, uint32_t fiber_id, uint64_t time,
+                   std::shared_ptr<Logger> logger, LogLevel::Level level)
+    : m_file(file),
+      m_line(line),
+      m_elapse(elapse),
+      m_threadId(thread_id),
+      m_fiberId(fiber_id),
+      m_time(time),
+      m_logger(logger),
+      m_level(level) {}
+
+Logger::Logger(const std::string& name)
+    : m_name(name),
+      m_level(LogLevel::DEBUG) {
+    m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T<%f:%l>%T%m%n"));
+}
+
+LogEventWrap::LogEventWrap(LogEvent::ptr event) : m_event(event) {}
+
+LogEventWrap::~LogEventWrap() {
+    m_event->getLogger()->log(m_event->getLevel(), m_event);
+}
+
+std::stringstream& LogEventWrap::getSS() {
+    return m_event->getSS();
+}
 
 void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
     if (level >= m_level) {
@@ -154,6 +203,9 @@ void Logger::fatal(LogEvent::ptr event) {
 }
 
 void Logger::addAppender(LogAppender::ptr appender) {
+    if (!appender->getFormatter()) {  // 用logger的样式初始化appender的样式
+        appender->m_formatter = m_formatter;
+    }
     m_appenders.emplace_back(appender);
 }
 
@@ -188,7 +240,9 @@ bool FileLogAppender::reopen() {
     return !!m_filestream;
 }
 
-LogFormatter::LogFormatter(const std::string& pattern) : m_pattern(pattern) {}
+LogFormatter::LogFormatter(const std::string& pattern) : m_pattern(pattern) {
+    init();
+}
 
 std::string LogFormatter::format(LogLevel::Level level, LogEvent::ptr event) {
     std::stringstream ss;
@@ -214,7 +268,7 @@ void LogFormatter::init() {
     std::vector<std::tuple<std::string, std::string, int>> vec;
     std::string nstr;
     for (size_t i = 0; i < m_pattern.size(); ++i) {
-        if (m_pattern[i] == '%') {
+        if (m_pattern[i] != '%') {
             nstr.append(1, m_pattern[i]);
             continue;
         }
@@ -266,6 +320,8 @@ void LogFormatter::init() {
                 vec.emplace_back(nstr, std::string(), 0);
                 nstr.clear();
             }
+            vec.emplace_back(str, fmt, 1);
+            i = n - 1;
         } else if (fmt_status == 1) {
             std::cout << "pattern parse error: " << m_pattern << " - " << m_pattern.substr(i) << std::endl;
             m_error = true;
@@ -301,7 +357,7 @@ void LogFormatter::init() {
                 m_items.emplace_back(iter->second(std::get<1>(i)));
             }
         }
-        std::cout << "(" << std::get<0>(i) << ") - (" << std::get<1>(i) << ") - (" << std::get<2>(i) << ")" << std::endl;
+        // std::cout << "(" << std::get<0>(i) << ") - (" << std::get<1>(i) << ") - (" << std::get<2>(i) << ")" << std::endl;
     }
 }
 

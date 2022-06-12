@@ -1,3 +1,15 @@
+//===----------------------------------------------------------------------===//
+//
+//                         Sylar-Server
+//
+// log.h
+//
+// Identification: src/log.h
+//
+// Copyright (c) 2022, pyc
+//
+//===----------------------------------------------------------------------===//
+
 #pragma once
 
 #include <fstream>
@@ -6,6 +18,21 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#define SYLAR_LOG_LEVEL(logger, level)                             \
+    if (logger->getLevel() <= level)                               \
+    sylar::LogEventWrap(                                           \
+        std::make_shared<sylar::LogEvent>(__FILE__, __LINE__, 0,   \
+                                          sylar::GetThreadId(),    \
+                                          sylar::GetFiberId(),     \
+                                          time(0), logger, level)) \
+        .getSS()
+
+#define SYLAR_LOG_DEBUG(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::DEBUG)
+#define SYLAR_LOG_INFO(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::INFO)
+#define SYLAR_LOG_WARN(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::WARN)
+#define SYLAR_LOG_ERROR(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::ERROR)
+#define SYLAR_LOG_FATAL(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::FATAL)
 
 namespace sylar {
 
@@ -34,15 +61,21 @@ class LogEvent {
 public:
     typedef std::shared_ptr<LogEvent> ptr;
 
-    LogEvent() = default;
+    LogEvent(const char* file, int32_t line, uint32_t elapse,
+             uint32_t thread_id, uint32_t fiber_id, uint64_t time,
+             std::shared_ptr<Logger> logger, LogLevel::Level level);
+
     const char* getFilename() const { return m_file; }
     int32_t getLine() const { return m_line; }
     uint32_t getElapse() const { return m_elapse; }
     uint32_t getThreadId() const { return m_threadId; }
     uint32_t getFiberId() const { return m_fiberId; }
     uint64_t getTime() const { return m_time; }
-    const std::string& getContent() const { return m_content; }
+    // const std::string& getContent() const { return m_content; }
+    const std::string getContent() const { return m_ss.str(); }
+    std::stringstream& getSS() { return m_ss; }
     std::shared_ptr<Logger> getLogger() const { return m_logger; }
+    LogLevel::Level getLevel() const { return m_level; }
 
 private:
     const char* m_file = nullptr;  // 文件名
@@ -51,10 +84,22 @@ private:
     uint32_t m_threadId = 0;       // 线程id
     uint32_t m_fiberId = 0;        // 协程id
     uint64_t m_time = 0;           // 时间
-    std::string m_content;         // 消息
+    // std::string m_content;         // 消息
+    std::stringstream m_ss;
 
     std::shared_ptr<Logger> m_logger;  // 日志器
     LogLevel::Level m_level;           // 日志等级
+};
+
+class LogEventWrap {
+public:
+    LogEventWrap(LogEvent::ptr event);
+    ~LogEventWrap();
+
+    std::stringstream& getSS();
+
+private:
+    LogEvent::ptr m_event;
 };
 
 // 日志格式器
@@ -70,7 +115,6 @@ public:
     public:
         typedef std::shared_ptr<FormatItem> ptr;
 
-        FormatItem(const std::string& fmt = "") {}
         virtual ~FormatItem() {}
         virtual void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) = 0;
     };
@@ -85,6 +129,8 @@ private:
 
 // 日志输出地
 class LogAppender {
+    friend class Logger;
+
 public:
     typedef std::shared_ptr<LogAppender> ptr;
 
@@ -104,7 +150,7 @@ class Logger {
 public:
     typedef std::shared_ptr<Logger> ptr;
 
-    Logger(const std::string& name);
+    Logger(const std::string& name = "root");
     void log(LogLevel::Level level, LogEvent::ptr event);
     void debug(LogEvent::ptr event);
     void info(LogEvent::ptr event);
@@ -122,7 +168,8 @@ public:
 private:
     std::string m_name;                       // 日志名称
     LogLevel::Level m_level;                  // 日志级别
-    std::list<LogAppender::ptr> m_appenders;  // Appender列表
+    std::list<LogAppender::ptr> m_appenders;  // 目标目录列表
+    LogFormatter::ptr m_formatter;            // 日志格式器
 };
 
 // 输出到控制台的Appender
