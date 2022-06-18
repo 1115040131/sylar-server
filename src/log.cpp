@@ -12,6 +12,8 @@
 
 #include "log.h"
 
+#include <stdarg.h>
+
 #include <functional>
 #include <iostream>
 #include <list>
@@ -158,20 +160,36 @@ LogEvent::LogEvent(const char* file, int32_t line, uint32_t elapse,
       m_logger(logger),
       m_level(level) {}
 
-Logger::Logger(const std::string& name)
-    : m_name(name),
-      m_level(LogLevel::DEBUG) {
-    m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T<%f:%l>%T%m%n"));
-}
-
 LogEventWrap::LogEventWrap(LogEvent::ptr event) : m_event(event) {}
 
 LogEventWrap::~LogEventWrap() {
     m_event->getLogger()->log(m_event->getLevel(), m_event);
 }
 
+void LogEvent::format(const char* fmt, ...) {
+    va_list al;
+    va_start(al, fmt);
+    format(fmt, al);
+    va_end(al);
+}
+
+void LogEvent::format(const char* fmt, va_list al) {
+    char* buf = nullptr;
+    int len = vasprintf(&buf, fmt, al);
+    if (len != -1) {
+        m_ss << std::string(buf, len);
+        free(buf);
+    }
+}
+
 std::stringstream& LogEventWrap::getSS() {
     return m_event->getSS();
+}
+
+Logger::Logger(const std::string& name)
+    : m_name(name),
+      m_level(LogLevel::DEBUG) {
+    m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T<%f:%l>%T%m%n"));
 }
 
 void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
@@ -224,7 +242,9 @@ void StdoutLogAppender::log(LogLevel::Level level, LogEvent::ptr event) {
     }
 }
 
-FileLogAppender::FileLogAppender(const std::string& filename) : m_filename(filename) {}
+FileLogAppender::FileLogAppender(const std::string& filename) : m_filename(filename) {
+    reopen();
+}
 
 void FileLogAppender::log(LogLevel::Level level, LogEvent::ptr event) {
     if (level >= m_level) {
@@ -359,6 +379,16 @@ void LogFormatter::init() {
         }
         // std::cout << "(" << std::get<0>(i) << ") - (" << std::get<1>(i) << ") - (" << std::get<2>(i) << ")" << std::endl;
     }
+}
+
+LoggerManager::LoggerManager() {
+    m_root = std::make_shared<Logger>();
+    m_root->addAppender(std::make_shared<StdoutLogAppender>());
+}
+
+Logger::ptr LoggerManager::getLogger(const std::string& name) const {
+    auto iter = m_loggers.find(name);
+    return iter == m_loggers.end() ? m_root : iter->second;
 }
 
 }  // namespace sylar

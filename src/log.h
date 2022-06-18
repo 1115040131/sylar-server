@@ -12,20 +12,24 @@
 
 #pragma once
 
+#include <stdarg.h>
+
 #include <fstream>
 #include <list>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#define SYLAR_LOG_LEVEL(logger, level)                             \
-    if (logger->getLevel() <= level)                               \
-    sylar::LogEventWrap(                                           \
-        std::make_shared<sylar::LogEvent>(__FILE__, __LINE__, 0,   \
-                                          sylar::GetThreadId(),    \
-                                          sylar::GetFiberId(),     \
-                                          time(0), logger, level)) \
+#include "singleton.h"
+
+#define SYLAR_LOG_LEVEL(logger, level)                                             \
+    if (logger->getLevel() <= level)                                               \
+    sylar::LogEventWrap(std::make_shared<sylar::LogEvent>(__FILE__, __LINE__, 0,   \
+                                                          sylar::GetThreadId(),    \
+                                                          sylar::GetFiberId(),     \
+                                                          time(0), logger, level)) \
         .getSS()
 
 #define SYLAR_LOG_DEBUG(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::DEBUG)
@@ -34,8 +38,21 @@
 #define SYLAR_LOG_ERROR(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::ERROR)
 #define SYLAR_LOG_FATAL(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::FATAL)
 
-namespace sylar {
+#define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...)                                                 \
+    if (logger->getLevel() <= level)                                                                 \
+    sylar::LogEventWrap(std::make_shared<sylar::LogEvent>(__FILE__, __LINE__, 0,                     \
+                                                          sylar::GetThreadId(), sylar::GetFiberId(), \
+                                                          time(0), logger, level))                   \
+        .getEvent()                                                                                  \
+        ->format(fmt, __VA_ARGS__)
 
+#define SYLAR_LOG_FMT_DEBUG(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::DEBUG, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_INFO(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::INFO, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_WARN(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::WARN, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_ERROR(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::ERROR, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_FATAL(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::FATAL, fmt, __VA_ARGS__)
+
+namespace sylar {
 class Logger;
 
 /**
@@ -77,6 +94,12 @@ public:
     std::shared_ptr<Logger> getLogger() const { return m_logger; }
     LogLevel::Level getLevel() const { return m_level; }
 
+    /**
+     * @brief 格式化写入日志内容
+     */
+    void format(const char* fmt, ...);
+    void format(const char* fmt, va_list al);
+
 private:
     const char* m_file = nullptr;  // 文件名
     int32_t m_line = 0;            // 行号
@@ -91,11 +114,15 @@ private:
     LogLevel::Level m_level;           // 日志等级
 };
 
+/**
+ * @brief 日志事件包装器
+ */
 class LogEventWrap {
 public:
     LogEventWrap(LogEvent::ptr event);
     ~LogEventWrap();
 
+    LogEvent::ptr getEvent() const { return m_event; }
     std::stringstream& getSS();
 
 private:
@@ -139,6 +166,16 @@ public:
 
     LogFormatter::ptr getFormatter() const { return m_formatter; }
     void setFormatter(LogFormatter::ptr formatter) { m_formatter = formatter; }
+
+    /**
+     * @brief 获取日志级别
+     */
+    LogLevel::Level getLevel() const { return m_level; }
+
+    /**
+     * @brief 设置日志级别
+     */
+    void setLevel(LogLevel::Level val) { m_level = val; }
 
 protected:
     LogLevel::Level m_level;
@@ -194,5 +231,24 @@ private:
     std::string m_filename;
     std::ofstream m_filestream;
 };
+
+/**
+ * @brief 日志器管理类
+ */
+class LoggerManager {
+public:
+    LoggerManager();
+    void init();
+    Logger::ptr getLogger(const std::string& name) const;
+
+private:
+    std::map<std::string, Logger::ptr> m_loggers;
+    Logger::ptr m_root;
+};
+
+// 日志器管理类单例模式
+typedef Singleton<LoggerManager> LoggerMgr;
+
+typedef Singletonptr<LoggerManager> LoggerMgrPtr;
 
 }  // namespace sylar
