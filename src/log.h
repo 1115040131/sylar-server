@@ -23,7 +23,11 @@
 #include <vector>
 
 #include "singleton.h"
+#include "util.h"
 
+/**
+ * @brief 使用流式方式将日志级别level的日志写入到logger
+ */
 #define SYLAR_LOG_LEVEL(logger, level)                                             \
     if (logger->getLevel() <= level)                                               \
     sylar::LogEventWrap(std::make_shared<sylar::LogEvent>(__FILE__, __LINE__, 0,   \
@@ -38,6 +42,9 @@
 #define SYLAR_LOG_ERROR(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::ERROR)
 #define SYLAR_LOG_FATAL(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::FATAL)
 
+/**
+ * @brief 使用格式化方式将日志级别level的日志写入到logger
+ */
 #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...)                                                 \
     if (logger->getLevel() <= level)                                                                 \
     sylar::LogEventWrap(std::make_shared<sylar::LogEvent>(__FILE__, __LINE__, 0,                     \
@@ -51,6 +58,11 @@
 #define SYLAR_LOG_FMT_WARN(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::WARN, fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_ERROR(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::ERROR, fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_FATAL(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::FATAL, fmt, __VA_ARGS__)
+
+/**
+ * @brief 获取主日志器
+ */
+#define SYLAR_LOG_ROOT() sylar::LoggerMgr::GetInstance()->getRoot()
 
 namespace sylar {
 class Logger;
@@ -88,7 +100,6 @@ public:
     uint32_t getThreadId() const { return m_threadId; }
     uint32_t getFiberId() const { return m_fiberId; }
     uint64_t getTime() const { return m_time; }
-    // const std::string& getContent() const { return m_content; }
     const std::string getContent() const { return m_ss.str(); }
     std::stringstream& getSS() { return m_ss; }
     std::shared_ptr<Logger> getLogger() const { return m_logger; }
@@ -101,15 +112,13 @@ public:
     void format(const char* fmt, va_list al);
 
 private:
-    const char* m_file = nullptr;  // 文件名
-    int32_t m_line = 0;            // 行号
-    uint32_t m_elapse = 0;         // 程序启动到现在的毫秒数
-    uint32_t m_threadId = 0;       // 线程id
-    uint32_t m_fiberId = 0;        // 协程id
-    uint64_t m_time = 0;           // 时间
-    // std::string m_content;         // 消息
-    std::stringstream m_ss;
-
+    const char* m_file = nullptr;      // 文件名
+    int32_t m_line = 0;                // 行号
+    uint32_t m_elapse = 0;             // 程序启动到现在的毫秒数
+    uint32_t m_threadId = 0;           // 线程id
+    uint32_t m_fiberId = 0;            // 协程id
+    uint64_t m_time = 0;               // 时间戳
+    std::stringstream m_ss;            // 日志内容流
     std::shared_ptr<Logger> m_logger;  // 日志器
     LogLevel::Level m_level;           // 日志等级
 };
@@ -240,6 +249,7 @@ public:
     LoggerManager();
     void init();
     Logger::ptr getLogger(const std::string& name) const;
+    Logger::ptr getRoot() { return m_root; }
 
 private:
     std::map<std::string, Logger::ptr> m_loggers;
