@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(sylar)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -g -Wall -Wno-deprecated -Werror -Wno-unused-function")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++17 -rdynamic -O0 -g -Wall -Wno-deprecated -Werror -Wno-unused-function")
 
 include_directories(/home/pyc/dev/yaml-cpp-yaml-cpp-0.7.0/include)
 
