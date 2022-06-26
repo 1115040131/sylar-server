@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <yaml-cpp/yaml.h>
+
 #include <boost/lexical_cast.hpp>
 #include <map>
 #include <memory>
@@ -27,7 +29,9 @@ public:
     typedef std::shared_ptr<ConfigVarBase> ptr;
 
     ConfigVarBase(const std::string& name, const std::string& description = "")
-        : m_name(name), m_description(description) {}
+        : m_name(name), m_description(description) {
+            std::transform(m_name.begin(), m_name.end(), m_name.begin(), ::tolower);
+        }
     virtual ~ConfigVarBase() {}
 
     const std::string& getName() const { return m_name; }
@@ -103,7 +107,7 @@ public:
             return tmp;
         }
 
-        if (name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ._0123456789") != std::string::npos) {
+        if (name.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") != std::string::npos) {
             SYLAR_LOG_ERROR(SYLAR_LOG_ROOT()) << "Lookup name = " << name << " invalid";
             throw std::invalid_argument(name);
         }
@@ -126,6 +130,10 @@ public:
         }
         return std::dynamic_pointer_cast<ConfigVar<T>>(iter->second);
     }
+
+    static void LoadFromYaml(const YAML::Node& root);
+
+    static ConfigVarBase::ptr LookupBase(const std::string& name);
 
 private:
     static ConfigVarMap s_datas;

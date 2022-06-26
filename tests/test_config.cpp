@@ -7,7 +7,7 @@ sylar::ConfigVar<int>::ptr g_int_value_config =
     sylar::Config::Lookup("system.port", (int)8080, "system port");
 
 sylar::ConfigVar<float>::ptr g_float_value_config =
-    sylar::Config::Lookup("system.port", (float)10.2f, "system value");
+    sylar::Config::Lookup("system.value", (float)10.2f, "system value");
 
 void print_yaml(const YAML::Node& node, int level) {
     if (node.IsScalar()) {
@@ -34,14 +34,22 @@ void print_yaml(const YAML::Node& node, int level) {
 void test_yaml() {
     YAML::Node root = YAML::LoadFile("/home/pyc/dev/sylar/bin/conf/log.yml");
     print_yaml(root, 0);
+}
 
-    //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << root;
+void test_config() {
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "before: " << g_int_value_config->getValue();
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "before: " << g_float_value_config->toString();
+
+    YAML::Node root = YAML::LoadFile("/home/pyc/dev/sylar/bin/conf/log.yml");
+
+    sylar::Config::LoadFromYaml(root);
+
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "after: " << g_float_value_config->toString();
 }
 
 int main(int argc, char** argv) {
-    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_int_value_config->getValue();
-    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_float_value_config->toString();
-
-    test_yaml();
+    // test_yaml();
+    test_config();
     return 0;
 }
