@@ -28,3 +28,25 @@ Appender（日志输出地方）
 Config --> Yaml 
 
 yaml-cpp 
+
+mkdir build && cd build && cmake .. && make install
+```cpp
+YAML::Node node =YAML::LoadFile(filename);
+if (node.IsMap()) {
+   for (auto& iter : node) {}
+}
+else if (node.IsSequence()) {
+   for (size_t i = 0; i < node.size(); ++i) {}
+}
+else if (node.IsScalar()) {}
+```
+配置系统的原则，约定优于配置
+```cpp
+template<T, FromStr, ToStr>
+class ConfigVar;
+
+template<F, T>
+class LexicalCast;
+
+// 容器偏特化，目前支持vector
+```
