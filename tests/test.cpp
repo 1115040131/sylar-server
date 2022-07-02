@@ -3,7 +3,6 @@
 
 #include "../src/log.h"
 #include "../src/singleton.h"
-#include "../src/util.h"
 
 int main(int argc, char** argv) {
     sylar::Logger::ptr logger = std::make_shared<sylar::Logger>();
