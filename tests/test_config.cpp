@@ -1,5 +1,7 @@
 #include <yaml-cpp/yaml.h>
 
+#include <iostream>
+
 #include "../src/config.h"
 #include "../src/log.h"
 
@@ -196,9 +198,23 @@ void test_class() {
     SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "after: " << g_person_vec_map->toString();
 }
 
+void test_log() {
+    static sylar::Logger::ptr system_log = SYLAR_LOG_NAME("system");
+    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+    std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    YAML::Node root = YAML::LoadFile("/home/pyc/dev/sylar/bin/conf/log.yml");
+    sylar::Config::LoadFromYaml(root);
+    std::cout << "===================================" << std::endl;
+    std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    std::cout << "===================================" << std::endl;
+    std::cout << root << std::endl;
+    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl; 
+}
+
 int main(int argc, char** argv) {
     // test_yaml();
     // test_config();
-    test_class();
+    // test_class();
+    test_log();
     return 0;
 }

@@ -17,11 +17,9 @@
 namespace sylar {
 
 ConfigVarBase::ptr Config::LookupBase(const std::string& name) {
-    auto iter = s_datas.find(name);
-    return iter == s_datas.end() ? nullptr : iter->second;
+    auto iter = GetDatas().find(name);
+    return iter == GetDatas().end() ? nullptr : iter->second;
 }
-
-Config::ConfigVarMap Config::s_datas;
 
 static void ListAllMember(const std::string& prefix,
                           const YAML::Node& node,

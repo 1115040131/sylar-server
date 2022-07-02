@@ -255,14 +255,12 @@ public:
  *          ToStr 从T转换成std::string的仿函数
  *          std::string 为YAML格式的字符串
  */
-template <class T,
-          class FromStr = LexicalCast<std::string, T>,
-          class ToStr = LexicalCast<T, std::string>>
+template <class T, class FromStr = LexicalCast<std::string, T>, class ToStr = LexicalCast<T, std::string>>
 class ConfigVar : public ConfigVarBase {
 public:
     typedef std::shared_ptr<ConfigVar> ptr;
     // 配置更改回调函数
-    typedef std::function<void(const T& old_value, const T& new_value)> on_change_cb;
+    typedef std::function<void (const T& old_value, const T& new_value)> on_change_cb;
 
     ConfigVar(const std::string& name, const T& default_value, const std::string& description = "")
         : ConfigVarBase(name, description), m_val(default_value) {}
@@ -346,8 +344,8 @@ public:
     template <class T>
     static typename ConfigVar<T>::ptr Lookup(const std::string& name,
                                              const T& default_value, const std::string& description = "") {
-        auto iter = s_datas.find(name);
-        if (iter != s_datas.end()) {
+        auto iter = GetDatas().find(name);
+        if (iter != GetDatas().end()) {
             // 如果同名key对应值类型不同, dynamic_cast转换失败, 返回nullptr
             auto tmp = std::dynamic_pointer_cast<ConfigVar<T>>(iter->second);
             if (tmp) {
@@ -367,7 +365,7 @@ public:
         }
 
         typename ConfigVar<T>::ptr v = std::make_shared<ConfigVar<T>>(name, default_value, description);
-        s_datas[name] = v;
+        GetDatas()[name] = v;
         return v;
     }
 
@@ -378,8 +376,8 @@ public:
      */
     template <class T>
     static typename ConfigVar<T>::ptr Lookup(const std::string& name) {
-        auto iter = s_datas.find(name);
-        if (iter == s_datas.end()) {
+        auto iter = GetDatas().find(name);
+        if (iter == GetDatas().end()) {
             return nullptr;
         }
         return std::dynamic_pointer_cast<ConfigVar<T>>(iter->second);
@@ -390,7 +388,10 @@ public:
     static ConfigVarBase::ptr LookupBase(const std::string& name);
 
 private:
-    static ConfigVarMap s_datas;
+    static ConfigVarMap& GetDatas() {
+        static ConfigVarMap s_datas;
+        return s_datas;
+    }
 };
 
 }  // namespace sylar
