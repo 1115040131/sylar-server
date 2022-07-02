@@ -260,7 +260,7 @@ class ConfigVar : public ConfigVarBase {
 public:
     typedef std::shared_ptr<ConfigVar> ptr;
     // 配置更改回调函数
-    typedef std::function<void (const T& old_value, const T& new_value)> on_change_cb;
+    typedef std::function<void(const T& ol0d_value, const T& new_value)> on_change_cb;
 
     ConfigVar(const std::string& name, const T& default_value, const std::string& description = "")
         : ConfigVarBase(name, description), m_val(default_value) {}

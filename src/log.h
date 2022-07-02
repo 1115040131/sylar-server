@@ -183,7 +183,7 @@ public:
     virtual std::string toYamlString() = 0;
 
     LogFormatter::ptr getFormatter() const { return m_formatter; }
-    void setFormatter(LogFormatter::ptr formatter) { m_formatter = formatter; }
+    void setFormatter(LogFormatter::ptr formatter);
 
     /**
      * @brief 获取日志级别
@@ -197,6 +197,7 @@ public:
 
 protected:
     LogLevel::Level m_level = LogLevel::DEBUG;
+    bool m_has_formatter = false;
     LogFormatter::ptr m_formatter;
 };
 
@@ -222,7 +223,7 @@ public:
     const std::string& getName() const { return m_name; }
     LogLevel::Level getLevel() const { return m_level; }
     void setLevel(LogLevel::Level level) { m_level = level; }
-    void setFormatter(LogFormatter::ptr formatter) { m_formatter = formatter; }
+    void setFormatter(LogFormatter::ptr formatter);
     void setFormatter(const std::string& pattern);
     LogFormatter::ptr getFormatter() const { return m_formatter; }
 

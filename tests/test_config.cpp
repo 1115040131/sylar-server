@@ -200,7 +200,7 @@ void test_class() {
 
 void test_log() {
     static sylar::Logger::ptr system_log = SYLAR_LOG_NAME("system");
-    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+    SYLAR_LOG_INFO(system_log) << "hello system";
     std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
     YAML::Node root = YAML::LoadFile("/home/pyc/dev/sylar/bin/conf/log.yml");
     sylar::Config::LoadFromYaml(root);
@@ -208,7 +208,11 @@ void test_log() {
     std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
     std::cout << "===================================" << std::endl;
     std::cout << root << std::endl;
-    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl; 
+    SYLAR_LOG_INFO(system_log) << "hello system"; 
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "hello root"; 
+
+    system_log->setFormatter("%d - %m%n");
+    SYLAR_LOG_INFO(system_log) << "hello system"; 
 }
 
 int main(int argc, char** argv) {

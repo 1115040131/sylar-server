@@ -14,6 +14,7 @@
 
 #include <stdarg.h>
 
+#include <fstream> 
 #include <functional>
 #include <iostream>
 #include <list>
@@ -208,6 +209,15 @@ std::stringstream& LogEventWrap::getSS() {
     return m_event->getSS();
 }
 
+void LogAppender::setFormatter(LogFormatter::ptr formatter) {
+    m_formatter = formatter;
+    if (m_formatter) {
+        m_has_formatter = true;
+    } else {
+        m_has_formatter = false;
+    }
+}
+
 Logger::Logger(const std::string& name)
     : m_name(name),
       m_level(LogLevel::DEBUG) {
@@ -248,7 +258,8 @@ void Logger::fatal(LogEvent::ptr event) {
 }
 
 void Logger::addAppender(LogAppender::ptr appender) {
-    if (!appender->getFormatter()) {  // 用logger的样式初始化appender的样式
+    // appender没有自己的样式时, 用logger的样式初始化, 保持m_has_formatter不变
+    if (!appender->getFormatter()) {
         appender->m_formatter = m_formatter;
     }
     m_appenders.emplace_back(appender);
@@ -267,6 +278,16 @@ void Logger::clearAppenders() {
     m_appenders.clear();
 }
 
+void Logger::setFormatter(LogFormatter::ptr formatter) {
+    m_formatter = formatter;
+
+    for (auto& appender : m_appenders) {
+        if (!appender->m_has_formatter) {
+            appender->m_formatter = formatter;
+        }
+    }
+}
+
 void Logger::setFormatter(const std::string& pattern) {
     LogFormatter::ptr formatter = std::make_shared<LogFormatter>(pattern);
     if (formatter->isError()) {
@@ -275,6 +296,12 @@ void Logger::setFormatter(const std::string& pattern) {
         return;
     }
     m_formatter = formatter;
+
+    for (auto& appender : m_appenders) {
+        if (!appender->m_has_formatter) {
+            appender->m_formatter = formatter;
+        }
+    }
 }
 
 std::string Logger::toYamlString() {
@@ -305,7 +332,7 @@ std::string StdoutLogAppender::toYamlString() {
     if (m_level != LogLevel::UNKNOW) {
         node["level"] = LogLevel::ToString(m_level);
     }
-    if (m_formatter) {
+    if (m_has_formatter && m_formatter) {
         node["formatter"] = m_formatter->getPattern();
     }
     std::stringstream ss;
@@ -330,7 +357,7 @@ std::string FileLogAppender::toYamlString() {
     if (m_level != LogLevel::UNKNOW) {
         node["level"] = LogLevel::ToString(m_level);
     }
-    if (m_formatter) {
+    if (m_has_formatter && m_formatter) {
         node["formatter"] = m_formatter->getPattern();
     }
     std::stringstream ss;
@@ -342,7 +369,7 @@ bool FileLogAppender::reopen() {
     if (m_filestream) {
         m_filestream.close();
     }
-    m_filestream.open(m_filename);
+    m_filestream.open(m_filename, std::ios::app);
     return !!m_filestream;
 }
 
@@ -649,6 +676,15 @@ struct LogIniter {
                         appender.reset(new StdoutLogAppender());
                     }
                     appender->setLevel(appender_define.level);
+                    if (!appender_define.formatter.empty()) {
+                        LogFormatter::ptr fmt = std::make_shared<LogFormatter>(appender_define.formatter);
+                        if (!fmt->isError()) {
+                            appender->setFormatter(fmt);
+                        } else {
+                            std::cout << "logger name=" << log_define.name << " appender type=" << appender_define.type
+                                      << " formatter=" << appender_define.formatter << " is invalid" << std::endl;
+                        }
+                    }
                     logger->addAppender(appender);
                 }
             }
