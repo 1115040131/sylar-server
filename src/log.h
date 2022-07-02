@@ -64,8 +64,11 @@
  */
 #define SYLAR_LOG_ROOT() sylar::LoggerMgr::GetInstance()->getRoot()
 
+#define SYLAR_LOG_NAME(name) sylar::LoggerMgr::GetInstance()->getLogger(name)
+
 namespace sylar {
 class Logger;
+class LoggerManger;
 
 /**
  * @brief 日志级别
@@ -73,14 +76,16 @@ class Logger;
 class LogLevel {
 public:
     enum Level {
+        UNKNOW = 0,
         DEBUG = 1,
-        INFO,
-        WARN,
-        ERROR,
-        FATAL
+        INFO = 2,
+        WARN = 3,
+        ERROR = 4,
+        FATAL = 5
     };
 
     static const char* ToString(Level level);
+    static LogLevel::Level FromString(const std::string& str);
 };
 
 /**
@@ -157,6 +162,8 @@ public:
 
     void init();  // pattern解析
 
+    bool isError() const { return m_error; }
+
 private:
     std::string m_pattern;                 // 日志格式模板
     std::vector<FormatItem::ptr> m_items;  // 日志格式解析后格式
@@ -192,7 +199,9 @@ protected:
 };
 
 // 日志器
-class Logger {
+class Logger : public std::enable_shared_from_this<Logger> {
+    friend class LoggerManager;
+
 public:
     typedef std::shared_ptr<Logger> ptr;
 
@@ -206,16 +215,22 @@ public:
 
     void addAppender(LogAppender::ptr appender);
     void delAppender(LogAppender::ptr appender);
+    void clearAppenders();
 
     const std::string& getName() const { return m_name; }
     LogLevel::Level getLevel() const { return m_level; }
     void setLevel(LogLevel::Level level) { m_level = level; }
+    void setFormatter(LogFormatter::ptr formatter) { m_formatter = formatter; }
+    void setFormatter(const std::string& pattern);
+    LogFormatter::ptr getFormatter() const { return m_formatter; }
 
 private:
     std::string m_name;                       // 日志名称
     LogLevel::Level m_level;                  // 日志级别
     std::list<LogAppender::ptr> m_appenders;  // 目标目录列表
     LogFormatter::ptr m_formatter;            // 日志格式器
+
+    Logger::ptr m_root;  // 主日志器
 };
 
 // 输出到控制台的Appender
@@ -248,7 +263,7 @@ class LoggerManager {
 public:
     LoggerManager();
     void init();
-    Logger::ptr getLogger(const std::string& name) const;
+    Logger::ptr getLogger(const std::string& name);
     Logger::ptr getRoot() { return m_root; }
 
 private:
