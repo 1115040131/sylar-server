@@ -13,7 +13,6 @@
 #include "thread.h"
 
 #include "log.h"
-#include "util.h"
 
 namespace sylar {
 
@@ -21,6 +20,28 @@ static thread_local Thread* t_thread = nullptr;
 static thread_local std::string t_thread_name = "UNKNOWN";
 
 static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
+
+Semaphore::Semaphore(uint32_t count) {
+    if (sem_init(&m_semaphore, 0, count)) {
+        throw std::logic_error("sem_init error");
+    }
+}
+
+Semaphore::~Semaphore() {
+    sem_destroy(&m_semaphore);
+}
+
+void Semaphore::wait() {
+    if (sem_wait(&m_semaphore)) {
+        throw std::logic_error("sem_wait error");
+    }
+}
+
+void Semaphore::notify() {
+    if (sem_post(&m_semaphore)) {
+        throw std::logic_error("sem_post error");
+    }
+}
 
 Thread* Thread::GetThis() {
     return t_thread;
@@ -49,6 +70,7 @@ Thread::Thread(std::function<void()> cb, const std::string& name) : m_cb(cb), m_
         SYLAR_LOG_ERROR(g_logger) << "pthread_create thread fail, rt=" << rt << " name=" << name;
         throw std::logic_error("pthread_create error");
     }
+    m_semaphore.wait();
 }
 
 Thread::~Thread() {
@@ -77,6 +99,9 @@ void* Thread::run(void* arg) {
 
     std::function<void()> cb;
     cb.swap(thread->m_cb);
+
+    // 线程初始化好后再唤醒
+    thread->m_semaphore.notify();
 
     cb();
     return 0;

@@ -84,3 +84,9 @@ static Logger::ptr g_log = SYLAR_LOG_NAME("system");
 
 ## 线程库
 Thread，Mutex，S/X-Lock
+
+pthread pthread_create
+
+互斥量 mutex
+
+信号量 semaphore
