@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "singleton.h"
+#include "thread.h"
 #include "util.h"
 
 /**
@@ -177,12 +178,13 @@ class LogAppender {
 
 public:
     typedef std::shared_ptr<LogAppender> ptr;
+    typedef Mutex MutexType;
 
     virtual ~LogAppender() {}
     virtual void log(LogLevel::Level level, LogEvent::ptr event) = 0;
     virtual std::string toYamlString() = 0;
 
-    LogFormatter::ptr getFormatter() const { return m_formatter; }
+    LogFormatter::ptr getFormatter();
     void setFormatter(LogFormatter::ptr formatter);
 
     /**
@@ -199,6 +201,8 @@ protected:
     LogLevel::Level m_level = LogLevel::DEBUG;
     bool m_has_formatter = false;
     LogFormatter::ptr m_formatter;
+
+    MutexType m_mutex;
 };
 
 // 日志器
@@ -207,6 +211,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
 
 public:
     typedef std::shared_ptr<Logger> ptr;
+    typedef Mutex MutexType;
 
     Logger(const std::string& name = "root");
     void log(LogLevel::Level level, LogEvent::ptr event);
@@ -223,6 +228,7 @@ public:
     const std::string& getName() const { return m_name; }
     LogLevel::Level getLevel() const { return m_level; }
     void setLevel(LogLevel::Level level) { m_level = level; }
+
     void setFormatter(LogFormatter::ptr formatter);
     void setFormatter(const std::string& pattern);
     LogFormatter::ptr getFormatter() const { return m_formatter; }
@@ -236,6 +242,8 @@ private:
     LogFormatter::ptr m_formatter;            // 日志格式器
 
     Logger::ptr m_root;  // 主日志器
+
+    MutexType m_mutex;
 };
 
 // 输出到控制台的Appender
@@ -246,6 +254,7 @@ public:
     virtual void log(LogLevel::Level level, LogEvent::ptr event) override;
     std::string toYamlString() override;
 };
+
 // 输出到文件的Appender
 class FileLogAppender : public LogAppender {
 public:
@@ -261,6 +270,8 @@ public:
 private:
     std::string m_filename;
     std::ofstream m_filestream;
+
+    uint64_t m_last_time;
 };
 
 /**
@@ -268,8 +279,10 @@ private:
  */
 class LoggerManager {
 public:
+    typedef Mutex MutexType;
+
     LoggerManager();
-    void init();
+
     Logger::ptr getLogger(const std::string& name);
     Logger::ptr getRoot() { return m_root; }
 
@@ -278,6 +291,8 @@ public:
 private:
     std::map<std::string, Logger::ptr> m_loggers;
     Logger::ptr m_root;
+
+    MutexType m_mutex;
 };
 
 // 日志器管理类单例模式

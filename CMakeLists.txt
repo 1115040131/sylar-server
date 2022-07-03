@@ -21,6 +21,7 @@ set (LIB_SRC
 
 add_library(sylar SHARED ${LIB_SRC})
 redefine_file_macro(sylar) #__FILE__
+
 # add_library(sylar_static STATIC ${LIB_SRC})
 # SET_TARGET_PROPERTIES (sylar_static PROPERTIES OUTPUT_NAME "sylar")
 
@@ -37,12 +38,12 @@ target_link_libraries(test ${LIBS})
 
 add_executable(test_config tests/test_config.cpp)
 add_dependencies(test_config sylar)
-redefine_file_macro(test) #__FILE__
+redefine_file_macro(test_config) #__FILE__
 target_link_libraries(test_config ${LIBS})
 
 add_executable(test_thread tests/test_thread.cpp)
 add_dependencies(test_thread sylar)
-redefine_file_macro(test) #__FILE__
+redefine_file_macro(test_thread) #__FILE__
 target_link_libraries(test_thread ${LIBS})
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

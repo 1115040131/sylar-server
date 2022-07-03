@@ -90,3 +90,7 @@ pthread pthread_create
 互斥量 mutex
 
 信号量 semaphore
+
+和Log整合
+
+文件输出周期性reopen
