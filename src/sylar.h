@@ -15,6 +15,7 @@
 #pragma once
 
 #include "src/config.h"
+#include "src/fiber.h"
 #include "src/log.h"
 #include "src/macro.h"
 #include "src/singleton.h"

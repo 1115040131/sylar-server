@@ -70,10 +70,12 @@ logs:
             level: (debug, info, warn, error, fatal)
             file: /logs/xxx.log
 ```
+
 ```cpp
 sylar::Logger g_logger = sylar::LoggerMgr::GetInstance()->getLogger(name);
 SYLAR_LOG_INFO(g_logger) << "xxx log";
 ```
+
 ```cpp
 static Logger::ptr g_log = SYLAR_LOG_NAME("system");
 // 当logger的appenders为空时, 使用root写logger
@@ -99,3 +101,11 @@ pthread pthread_create
 定义协程接口
 ucontext_t
 maro
+
+```
+Thread->main_fiber <-----> sub_fiber
+            ^
+            |
+            v
+         sub_fiber
+```
