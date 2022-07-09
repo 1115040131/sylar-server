@@ -81,3 +81,16 @@ static Logger::ptr g_log = SYLAR_LOG_NAME("system");
 定义LogDefine LogAppenderDefine，偏特化LexicalCast，
 
 实现日志配置解析
+
+## 线程库
+Thread，Mutex，S/X-Lock
+
+pthread pthread_create
+
+互斥量 mutex
+
+信号量 semaphore
+
+和Log整合
+
+文件输出周期性reopen

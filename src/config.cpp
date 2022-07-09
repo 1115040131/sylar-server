@@ -61,4 +61,13 @@ void Config::LoadFromYaml(const YAML::Node& root) {
     }
 }
 
+void Config::Visit(std::function<void(ConfigVarBase::ptr)> cb) {
+    RWMutexType::ReadLock lock(GetMutex());
+
+    ConfigVarMap& configs = GetDatas();
+    for (auto& config : configs) {
+        cb(config.second);
+    }
+}
+
 }  // namespace sylar
