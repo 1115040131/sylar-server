@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(sylar)
 
 # 设置__FILE__路径为相对路径
-include (cmake/utils.cmake)
+include (${PROJECT_SOURCE_DIR}/cmake/utils.cmake)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++17 -rdynamic -O0 -g -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined")

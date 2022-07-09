@@ -181,6 +181,12 @@ void Fiber::MainFunc() {
         curr->m_state = EXCEPT;
         SYLAR_LOG_ERROR(g_logger) << "Fiber Except";
     }
+
+    auto raw_ptr = curr.get();
+    curr.reset();
+    raw_ptr->swapOut();
+
+    SYLAR_ASSERT2(false, "never reach fiber_id=" + std::to_string(raw_ptr->getId()));
 }
 
 }  // namespace sylar

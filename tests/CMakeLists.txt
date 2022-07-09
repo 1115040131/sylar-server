@@ -11,7 +11,7 @@ foreach (sylar_test_source ${SYLAR_TEST_SOURCES})
     # Add the test target separately and as part of "make check-tests".
     add_executable(${sylar_test_name} ${sylar_test_source})
     add_dependencies(${sylar_test_name} sylar)
-    redefine_file_macro(test) #__FILE__
+    redefine_file_macro(${sylar_test_name}) #__FILE__
     target_link_libraries(${sylar_test_name} ${LIBS})
 
 endforeach(sylar_test_source ${SYLAR_TEST_SOURCES})

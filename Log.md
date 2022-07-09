@@ -59,7 +59,7 @@ class LexicalCast;
 配置的事件机制
 当一个配置项发生修改的时候，可以反向通知对应的代码，回调  
 
-# 日志系统整合配置系统
+## 日志系统整合配置系统
 ```yaml
 logs: 
     - name: root
@@ -103,6 +103,7 @@ ucontext_t
 maro
 
 ```
+Fiber::GetThis()
 Thread->main_fiber <-----> sub_fiber
             ^
             |
