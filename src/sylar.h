@@ -16,6 +16,7 @@
 
 #include "src/config.h"
 #include "src/log.h"
+#include "src/macro.h"
 #include "src/singleton.h"
 #include "src/thread.h"
 #include "src/util.h"
