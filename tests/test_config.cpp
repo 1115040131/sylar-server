@@ -181,7 +181,7 @@ void test_class() {
         SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << prefix << ": size=" << m.size();  \
     }
 
-    g_person->addListener(10, [](const Person& old_value, const Person& new_value) {
+    g_person->addListener([](const Person& old_value, const Person& new_value) {
         SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "old_value=" << old_value.toString()
                                          << " new_value=" << new_value.toString();
     });
@@ -208,11 +208,11 @@ void test_log() {
     std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
     std::cout << "===================================" << std::endl;
     std::cout << root << std::endl;
-    SYLAR_LOG_INFO(system_log) << "hello system"; 
-    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "hello root"; 
+    SYLAR_LOG_INFO(system_log) << "hello system";
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "hello root";
 
     system_log->setFormatter("%d - %m%n");
-    SYLAR_LOG_INFO(system_log) << "hello system"; 
+    SYLAR_LOG_INFO(system_log) << "hello system";
 }
 
 int main(int argc, char** argv) {
@@ -220,5 +220,13 @@ int main(int argc, char** argv) {
     // test_config();
     // test_class();
     test_log();
+
+    sylar::Config::Visit([](sylar::ConfigVarBase::ptr var) {
+        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "name=" << var->getName()
+                                         << " description=" << var->getDescription()
+                                         << " typename=" << var->getTypeName()
+                                         << " value=" << var->toString();
+    });
+
     return 0;
 }

@@ -73,8 +73,8 @@ void test_mutex() {
 }
 
 int main(int argc, char** argv) {
-    // test_thread();
-    test_mutex();
+    test_thread();
+    // test_mutex();
 
     return 0;
 }
