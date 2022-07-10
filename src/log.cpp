@@ -105,6 +105,13 @@ public:
         os << event->getThreadId();
     }
 };
+class ThreadNameFormatItem : public LogFormatter::FormatItem {
+public:
+    ThreadNameFormatItem(const std::string& str = "") {}
+    void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) override {
+        os << event->getThreadName();
+    }
+};
 class FiberIdFormatItem : public LogFormatter::FormatItem {
 public:
     FiberIdFormatItem(const std::string& str = "") {}
@@ -172,12 +179,14 @@ public:
 };
 
 LogEvent::LogEvent(const char* file, int32_t line, uint32_t elapse,
-                   uint32_t thread_id, uint32_t fiber_id, uint64_t time,
+                   uint32_t thread_id, const std::string& thread_name,
+                   uint32_t fiber_id, uint64_t time,
                    std::shared_ptr<Logger> logger, LogLevel::Level level)
     : m_file(file),
       m_line(line),
       m_elapse(elapse),
       m_threadId(thread_id),
+      m_threadName(thread_name),
       m_fiberId(fiber_id),
       m_time(time),
       m_logger(logger),
@@ -229,7 +238,7 @@ void LogAppender::setFormatter(LogFormatter::ptr formatter) {
 Logger::Logger(const std::string& name)
     : m_name(name),
       m_level(LogLevel::DEBUG) {
-    m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T<%f:%l>%T%m%n"));
+    m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T<%f:%l>%T%m%n"));
 }
 
 void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
@@ -499,17 +508,18 @@ void LogFormatter::init() {
         vec.emplace_back(nstr, std::string(), 0);
     }
     static std::map<std::string, std::function<FormatItem::ptr(const std::string& fmt)>> s_format_items = {
-        {"m", [](const std::string& fmt) { return std::make_shared<MessageFormatItem>(fmt); }},
-        {"p", [](const std::string& fmt) { return std::make_shared<LevelFormatItem>(fmt); }},
-        {"r", [](const std::string& fmt) { return std::make_shared<ElapseFormatItem>(fmt); }},
-        {"c", [](const std::string& fmt) { return std::make_shared<NameFormatItem>(fmt); }},
-        {"t", [](const std::string& fmt) { return std::make_shared<ThreadIdFormatItem>(fmt); }},
-        {"F", [](const std::string& fmt) { return std::make_shared<FiberIdFormatItem>(fmt); }},
-        {"d", [](const std::string& fmt) { return std::make_shared<TimeFormatItem>(fmt); }},
-        {"f", [](const std::string& fmt) { return std::make_shared<FilenameFormatItem>(fmt); }},
-        {"l", [](const std::string& fmt) { return std::make_shared<LineFormatItem>(fmt); }},
-        {"n", [](const std::string& fmt) { return std::make_shared<NewLineFormatItem>(fmt); }},
-        {"T", [](const std::string& fmt) { return std::make_shared<TabFormatItem>(fmt); }},
+        {"m", [](const std::string& fmt) { return std::make_shared<MessageFormatItem>(fmt); }},     // m:消息
+        {"p", [](const std::string& fmt) { return std::make_shared<LevelFormatItem>(fmt); }},       // p:日志级别
+        {"r", [](const std::string& fmt) { return std::make_shared<ElapseFormatItem>(fmt); }},      // r:累计毫秒数
+        {"c", [](const std::string& fmt) { return std::make_shared<NameFormatItem>(fmt); }},        // c:日志名称
+        {"t", [](const std::string& fmt) { return std::make_shared<ThreadIdFormatItem>(fmt); }},    // t:线程id
+        {"N", [](const std::string& fmt) { return std::make_shared<ThreadNameFormatItem>(fmt); }},  // N:线程名称
+        {"F", [](const std::string& fmt) { return std::make_shared<FiberIdFormatItem>(fmt); }},     // F:协程id
+        {"d", [](const std::string& fmt) { return std::make_shared<TimeFormatItem>(fmt); }},        // d:时间
+        {"f", [](const std::string& fmt) { return std::make_shared<FilenameFormatItem>(fmt); }},    // f:文件名
+        {"l", [](const std::string& fmt) { return std::make_shared<LineFormatItem>(fmt); }},        // l:行号
+        {"n", [](const std::string& fmt) { return std::make_shared<NewLineFormatItem>(fmt); }},     // n:换行
+        {"T", [](const std::string& fmt) { return std::make_shared<TabFormatItem>(fmt); }},         // T:Tab
     };
 
     for (auto& i : vec) {

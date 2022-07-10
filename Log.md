@@ -59,7 +59,7 @@ class LexicalCast;
 配置的事件机制
 当一个配置项发生修改的时候，可以反向通知对应的代码，回调  
 
-# 日志系统整合配置系统
+## 日志系统整合配置系统
 ```yaml
 logs: 
     - name: root
@@ -70,10 +70,12 @@ logs:
             level: (debug, info, warn, error, fatal)
             file: /logs/xxx.log
 ```
+
 ```cpp
 sylar::Logger g_logger = sylar::LoggerMgr::GetInstance()->getLogger(name);
 SYLAR_LOG_INFO(g_logger) << "xxx log";
 ```
+
 ```cpp
 static Logger::ptr g_log = SYLAR_LOG_NAME("system");
 // 当logger的appenders为空时, 使用root写logger
@@ -94,3 +96,17 @@ pthread pthread_create
 和Log整合
 
 文件输出周期性reopen
+
+## 协程库封装
+定义协程接口
+ucontext_t
+maro
+
+```
+Fiber::GetThis()
+Thread->main_fiber <-----> sub_fiber
+            ^
+            |
+            v
+         sub_fiber
+```
