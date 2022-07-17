@@ -182,6 +182,7 @@ void Fiber::MainFunc() {
         SYLAR_LOG_ERROR(g_logger) << "Fiber Except";
     }
 
+    // 获取当前协程裸指针
     auto raw_ptr = curr.get();
     curr.reset();
     raw_ptr->swapOut();

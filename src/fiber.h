@@ -56,7 +56,15 @@ public:
      */
     void swapOut();
 
+    /**
+     * @brief 返回协程id
+     */
     const uint64_t getId() const { return m_id; }
+
+    /**
+     * @brief 返回协程状态
+     */
+    State getState() const { return m_state;}
 
     /**
      * @brief 设置当前协程

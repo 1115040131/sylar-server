@@ -110,3 +110,18 @@ Thread->main_fiber <-----> sub_fiber
             v
          sub_fiber
 ```
+
+协程调度模块scheduler
+```
+         1 - N      1 - M
+scheduler --> thread --> fiber
+1.线程池, 分配一组线程
+2.协程调度器, 将协程指定到对应线程上执行
+
+N : M
+
+m_threads
+<function<void()>, fiber, threadid> m_fibers
+
+schedule(func/fiber)
+```
