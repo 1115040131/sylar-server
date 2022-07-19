@@ -21,7 +21,10 @@
 
 namespace sylar {
 
+class Scheduler;
 class Fiber : public std::enable_shared_from_this<Fiber> {
+    friend class Scheduler;
+
 public:
     typedef std::shared_ptr<Fiber> ptr;
 
@@ -38,7 +41,7 @@ private:
     Fiber();
 
 public:
-    Fiber(std::function<void()> cb, size_t stacksize = 0);
+    Fiber(std::function<void()> cb, size_t stacksize = 0, bool use_caller = false);
     ~Fiber();
 
     /**
@@ -56,7 +59,20 @@ public:
      */
     void swapOut();
 
+    // 相当于swapIn(), 但强行把当前协程置换成目标协程
+    void call();
+
+    void back();
+
+    /**
+     * @brief 返回协程id
+     */
     const uint64_t getId() const { return m_id; }
+
+    /**
+     * @brief 返回协程状态
+     */
+    State getState() const { return m_state; }
 
     /**
      * @brief 设置当前协程
@@ -88,6 +104,7 @@ public:
     static uint64_t TotalFibers();
 
     static void MainFunc();
+    static void CallerMainFunc();
 
     static uint64_t GetFiberId();
 

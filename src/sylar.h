@@ -18,6 +18,7 @@
 #include "src/fiber.h"
 #include "src/log.h"
 #include "src/macro.h"
+#include "src/scheduler.h"
 #include "src/singleton.h"
 #include "src/thread.h"
 #include "src/util.h"
