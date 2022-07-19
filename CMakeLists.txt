@@ -16,6 +16,7 @@ set (LIB_SRC
      src/config.cpp
      src/fiber.cpp
      src/log.cpp
+     src/scheduler.cpp
      src/thread.cpp
      src/util.cpp
      )

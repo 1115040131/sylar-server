@@ -124,4 +124,14 @@ m_threads
 <function<void()>, fiber, threadid> m_fibers
 
 schedule(func/fiber)
+
+start()
+stop()
+run()
+
+1.设置当前线程的scheduler
+2.设置当前线程的run, fiber
+3.协程调度循环while(true)
+   1.执行协程消息队列中任务
+   2.无任务, 执行idle
 ```

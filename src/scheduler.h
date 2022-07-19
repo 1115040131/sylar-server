@@ -38,7 +38,7 @@ public:
     void stop();
 
     template <class FiberOrCb>
-    void schedule(FiberOrCb fc, pthread_t thread = -1) {
+    void schedule(FiberOrCb fc, int thread = -1) {
         bool need_tickle = false;
         {
             MutexType::Lock lock(m_mutex);
@@ -67,18 +67,19 @@ public:
     }
 
 protected:
-    virtual void tickle();
-    void run();
-    virtual bool stopping();
-
     void setThis();
+    void run();
+
+    virtual void tickle();
+    virtual bool stopping();
+    virtual void idle();
 
 private:
     /**
      * @brief 协程调度启动(无锁)
      */
     template <class FiberOrCb>
-    bool scheduleNoLock(FiberOrCb fc, pthread_t thread) {
+    bool scheduleNoLock(FiberOrCb fc, int thread) {
         bool need_tickle = m_fibers.empty();
         FiberAndThread ft(fc, thread);
         if (ft.fiber || ft.cb) {
@@ -94,20 +95,20 @@ private:
     struct FiberAndThread {
         Fiber::ptr fiber;
         std::function<void()> cb;
-        pthread_t thread;
+        int thread;
 
-        FiberAndThread(Fiber::ptr _fiber, pthread_t _thread)
+        FiberAndThread(Fiber::ptr _fiber, int _thread)
             : fiber(_fiber), thread(_thread) {}
 
-        FiberAndThread(Fiber::ptr* _fiber, pthread_t _thread)
+        FiberAndThread(Fiber::ptr* _fiber, int _thread)
             : thread(_thread) {
             fiber.swap(*_fiber);
         }
 
-        FiberAndThread(std::function<void()> _cb, pthread_t _thread)
+        FiberAndThread(std::function<void()> _cb, int _thread)
             : cb(_cb), thread(_thread) {}
 
-        FiberAndThread(std::function<void()>* _cb, pthread_t _thread)
+        FiberAndThread(std::function<void()>* _cb, int _thread)
             : thread(_thread) {
             cb.swap(*_cb);
         }
@@ -126,23 +127,17 @@ private:
 
     std::string m_name;
     std::vector<Thread::ptr> m_threads;  // 线程池
-    std::list<FiberAndThread> m_fibers;  // 协程池
+    std::list<FiberAndThread> m_fibers;  // 协程消息队列
     Fiber::ptr m_root_fiber;             // 主协程
 
 protected:
-    std::vector<int> m_thread_ids;
-    size_t m_thread_count = 0;
-    size_t m_active_thread_count = 0;
-    size_t m_idle_thread_count = 0;
-    bool m_stopping = true;
-    bool m_auto_stop = false;
-    int m_root_thread_id = 0;
+    std::vector<int> m_thread_ids;                 // 协程下的线程id数组
+    size_t m_thread_count = 0;                     // 线程数量
+    std::atomic<size_t> m_active_thread_count{0};  // 工作线程数量
+    std::atomic<size_t> m_idle_thread_count{0};    // 空闲线程数量
+    bool m_stopping = true;                        // 是否正在停止
+    bool m_auto_stop = false;                      // 是否自动停止
+    int m_root_thread_id = 0;                      // 主线程id(use_caller)
 };
-
-Scheduler::Scheduler(/* args */) {
-}
-
-Scheduler::~Scheduler() {
-}
 
 }  // namespace sylar
